@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>CertChain - Certificate Generation System</title>
+    <style>
+      :root {
+        --bg: #f6f5f1;
+        --card: #fff;
+        --ink: #1d1d1f;
+        --mute: #6b6b70;
+        --line: #dcdad2;
+        --acc: #1f4fd8;
+        --ok: #13795b;
+        --bad: #b42318;
+        --gold: #b08d2f;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #121316;
+          --card: #1b1d22;
+          --ink: #ececee;
+          --mute: #9a9aa3;
+          --line: #2e3138;
+          --acc: #6f95ff;
+          --ok: #3ecf9f;
+          --bad: #ff7b72;
+          --gold: #d9b85a;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #121316;
+        --card: #1b1d22;
+        --ink: #ececee;
+        --mute: #9a9aa3;
+        --line: #2e3138;
+        --acc: #6f95ff;
+        --ok: #3ecf9f;
+        --bad: #ff7b72;
+        --gold: #d9b85a;
+      }
+      html {
+        scroll-padding-top: env(safe-area-inset-top, 0px);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          15px/1.5 system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 4px 0 2px;
+      }
+      .sub {
+        color: var(--mute);
+        margin: 0 0 14px;
+        font-size: 13px;
+      }
+      nav {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 14px;
+      }
+      nav button {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--ink);
+        border-radius: 10px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      nav button.on {
+        background: var(--acc);
+        color: #fff;
+        border-color: var(--acc);
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 14px;
+      }
+      label {
+        display: block;
+        font-size: 13px;
+        color: var(--mute);
+        margin: 10px 0 4px;
+      }
+      input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--ink);
+        font-size: 15px;
+      }
+      .btn {
+        margin-top: 14px;
+        padding: 11px 16px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--acc);
+        color: #fff;
+        font-size: 15px;
+        cursor: pointer;
+      }
+      .btn.alt {
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid var(--line);
+        margin-left: 6px;
+      }
+      .btn:disabled {
+        opacity: 0.5;
+      }
+      .msg {
+        margin-top: 10px;
+        font-size: 14px;
+      }
+      .ok {
+        color: var(--ok);
+      }
+      .bad {
+        color: var(--bad);
+      }
+      .cert {
+        border: 6px double var(--gold);
+        background: var(--card);
+        padding: 26px 16px;
+        text-align: center;
+        font-family: Georgia, "Times New Roman", serif;
+        border-radius: 4px;
+      }
+      .cert .t {
+        letter-spacing: 0.25em;
+        font-size: 12px;
+        color: var(--gold);
+        text-transform: uppercase;
+      }
+      .cert h2 {
+        font-size: 26px;
+        margin: 8px 0;
+      }
+      .cert .n {
+        font-size: 30px;
+        margin: 10px 0;
+        border-bottom: 1px solid var(--line);
+        display: inline-block;
+        padding: 0 14px 4px;
+        word-break: break-word;
+      }
+      .cert p {
+        margin: 6px 0;
+      }
+      .cert .m {
+        font:
+          11px ui-monospace,
+          Menlo,
+          Consolas,
+          monospace;
+        color: var(--mute);
+        word-break: break-all;
+        margin-top: 14px;
+      }
+      .blk {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 8px;
+        font-size: 12px;
+        background: var(--card);
+      }
+      .blk.invalid {
+        border-color: var(--bad);
+      }
+      .blk code {
+        display: block;
+        word-break: break-all;
+        font:
+          11px ui-monospace,
+          Menlo,
+          Consolas,
+          monospace;
+        color: var(--mute);
+      }
+      .blk b {
+        font-size: 13px;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .sm {
+        padding: 4px 10px;
+        font-size: 12px;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--ink);
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .hide {
+        display: none;
+      }
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        .printable,
+        .printable * {
+          visibility: visible;
+        }
+        .printable {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>CertChain</h1>
+      <p class="sub">
+        Issue tamper-evident certificates. Each one is mined into a SHA-256
+        hash-chained ledger and can be verified by ID.
+      </p>
+      <nav>
+        <button id="t-issue" class="on">Issue</button>
+        <button id="t-verify">Verify</button>
+        <button id="t-ledger">Ledger</button>
+      </nav>
+
+      <section id="p-issue">
+        <div class="card">
+          <label for="name">Recipient name</label
+          ><input id="name" maxlength="80" autocomplete="off" />
+          <label for="course">Course / achievement</label
+          ><input id="course" maxlength="100" autocomplete="off" />
+          <label for="issuer">Issuing institution</label
+          ><input id="issuer" maxlength="80" autocomplete="off" />
+          <label for="date">Date</label><input id="date" type="date" />
+          <button class="btn" id="go">Generate &amp; mine certificate</button>
+          <div class="msg" id="issueMsg"></div>
+        </div>
+        <div id="issued" class="hide">
+          <div class="printable" id="issuedCert"></div>
+          <button class="btn" id="print">Print / save as PDF</button>
+          <div class="msg" id="pdfMsg"></div>
+        </div>
+      </section>
+
+      <section id="p-verify" class="hide">
+        <div class="card">
+          <label for="vid">Certificate ID</label
+          ><input id="vid" placeholder="CERT-XXXXXXXX" autocomplete="off" />
+          <button class="btn" id="vgo">Verify</button>
+          <div class="msg" id="vMsg"></div>
+        </div>
+        <div id="vCert"></div>
+      </section>
+
+      <section id="p-ledger" class="hide">
+        <div class="card">
+          <div class="row">
+            <div id="chainState"></div>
+            <div>
+              <button class="sm" id="undo">Reload from storage</button>
+              <button class="sm" id="reset">Reset chain</button>
+            </div>
+          </div>
+        </div>
+        <div id="blocks"></div>
+      </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+      (function () {
+        "use strict";
+        var KEY = "certchain.v1",
+          DIFF = 3,
+          TARGET = "000";
+        var chain = [],
+          lastIssued = null;
+        function $(id) {
+          return document.getElementById(id);
+        }
+        function esc(s) {
+          return String(s).replace(/[&<>"']/g, function (c) {
+            return {
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            }[c];
+          });
+        }
+
+        async function sha(str) {
+          var buf = await crypto.subtle.digest(
+            "SHA-256",
+            new TextEncoder().encode(str),
+          );
+          return Array.from(new Uint8Array(buf))
+            .map(function (b) {
+              return b.toString(16).padStart(2, "0");
+            })
+            .join("");
+        }
+        function payload(b, nonce) {
+          return (
+            b.index +
+            "|" +
+            b.timestamp +
+            "|" +
+            JSON.stringify(b.data) +
+            "|" +
+            b.prevHash +
+            "|" +
+            nonce
+          );
+        }
+        async function mine(b) {
+          var n = 0,
+            h;
+          for (;;) {
+            h = await sha(payload(b, n));
+            if (h.indexOf(TARGET) === 0) return { nonce: n, hash: h };
+            n++;
+          }
+        }
+        async function genesis() {
+          var b = {
+            index: 0,
+            timestamp: 0,
+            data: { note: "Genesis block" },
+            prevHash: "0",
+          };
+          var r = await mine(b);
+          b.nonce = r.nonce;
+          b.hash = r.hash;
+          return b;
+        }
+        function save() {
+          try {
+            localStorage.setItem(KEY, JSON.stringify(chain));
+          } catch (e) {}
+        }
+        function load() {
+          try {
+            var s = localStorage.getItem(KEY);
+            if (s) {
+              var c = JSON.parse(s);
+              if (Array.isArray(c) && c.length) return c;
+            }
+          } catch (e) {}
+          return null;
+        }
+        /* returns index of first invalid block, or -1 if whole chain valid */
+        async function firstInvalid(upTo) {
+          var end = upTo === undefined ? chain.length - 1 : upTo;
+          for (var i = 0; i <= end; i++) {
+            var b = chain[i];
+            var h = await sha(payload(b, b.nonce));
+            if (h !== b.hash || h.indexOf(TARGET) !== 0) return i;
+            if (i > 0 && b.prevHash !== chain[i - 1].hash) return i;
+            if (i === 0 && b.prevHash !== "0") return 0;
+          }
+          return -1;
+        }
+        function newId() {
+          var a = new Uint8Array(4);
+          crypto.getRandomValues(a);
+          return (
+            "CERT-" +
+            Array.from(a)
+              .map(function (x) {
+                return x.toString(16).padStart(2, "0");
+              })
+              .join("")
+              .toUpperCase()
+          );
+        }
+        function certHtml(b) {
+          var d = b.data;
+          return (
+            '<div class="cert"><div class="t">Certificate of Achievement</div>' +
+            '<p>This is to certify that</p><div class="n">' +
+            esc(d.name) +
+            "</div>" +
+            "<p>has successfully completed</p><h2>" +
+            esc(d.course) +
+            "</h2>" +
+            "<p>Issued by <b>" +
+            esc(d.issuer) +
+            "</b> on " +
+            esc(d.date) +
+            "</p>" +
+            '<div class="m">ID: ' +
+            esc(d.certId) +
+            "<br>Block #" +
+            b.index +
+            " · Hash: " +
+            esc(b.hash) +
+            "</div></div>"
+          );
+        }
+        function show(tab) {
+          ["issue", "verify", "ledger"].forEach(function (t) {
+            $("p-" + t).classList.toggle("hide", t !== tab);
+            $("t-" + t).classList.toggle("on", t === tab);
+          });
+          if (tab === "ledger") renderLedger();
+        }
+        async function renderLedger() {
+          var bad = await firstInvalid();
+          var cs = $("chainState");
+          cs.innerHTML =
+            bad === -1
+              ? '<b class="ok">✔ Chain valid</b> · ' +
+                chain.length +
+                " block(s)"
+              : '<b class="bad">✖ Chain broken at block #' + bad + "</b>";
+          $("blocks").innerHTML = chain
+            .map(function (b, i) {
+              var inv = bad !== -1 && i >= bad;
+              var title =
+                b.index === 0
+                  ? "Genesis"
+                  : esc(b.data.name) + " — " + esc(b.data.course);
+              var id =
+                b.index === 0 ? "" : "<div>" + esc(b.data.certId) + "</div>";
+              return (
+                '<div class="blk' +
+                (inv ? " invalid" : "") +
+                '"><div class="row"><b>#' +
+                b.index +
+                " · " +
+                title +
+                "</b>" +
+                (b.index > 0
+                  ? '<button class="sm" data-t="' + i + '">Tamper</button>'
+                  : "") +
+                "</div>" +
+                id +
+                "<code>prev: " +
+                esc(b.prevHash) +
+                "</code><code>hash: " +
+                esc(b.hash) +
+                "</code><code>nonce: " +
+                b.nonce +
+                "</code></div>"
+              );
+            })
+            .join("");
+          Array.prototype.forEach.call(
+            document.querySelectorAll("[data-t]"),
+            function (btn) {
+              btn.onclick = function () {
+                var b = chain[+btn.getAttribute("data-t")];
+                b.data.name =
+                  b.data.name + " (edited)"; /* in memory only, not saved */
+                renderLedger();
+              };
+            },
+          );
+        }
+
+        $("t-issue").onclick = function () {
+          show("issue");
+        };
+        $("t-verify").onclick = function () {
+          show("verify");
+        };
+        $("t-ledger").onclick = function () {
+          show("ledger");
+        };
+        $("date").value = new Date().toISOString().slice(0, 10);
+
+        $("go").onclick = async function () {
+          var name = $("name").value.trim(),
+            course = $("course").value.trim(),
+            issuer = $("issuer").value.trim(),
+            date = $("date").value;
+          var m = $("issueMsg");
+          m.className = "msg";
+          if (!name || !course || !issuer || !date) {
+            m.className = "msg bad";
+            m.textContent = "Please fill in every field.";
+            return;
+          }
+          var btn = $("go");
+          btn.disabled = true;
+          m.textContent = "Checking chain and mining block…";
+          try {
+            var bad = await firstInvalid();
+            if (bad !== -1) {
+              m.className = "msg bad";
+              m.textContent =
+                "Ledger is invalid at block #" +
+                bad +
+                ". Reload or reset it before issuing.";
+              return;
+            }
+            var prev = chain[chain.length - 1];
+            var b = {
+              index: chain.length,
+              timestamp: Date.now(),
+              data: {
+                certId: newId(),
+                name: name,
+                course: course,
+                issuer: issuer,
+                date: date,
+              },
+              prevHash: prev.hash,
+            };
+            var r = await mine(b);
+            b.nonce = r.nonce;
+            b.hash = r.hash;
+            chain.push(b);
+            save();
+            m.className = "msg ok";
+            m.textContent =
+              "Certificate issued and added as block #" +
+              b.index +
+              " (nonce " +
+              b.nonce +
+              ").";
+            lastIssued = b;
+            $("pdfMsg").textContent = "";
+            $("issuedCert").innerHTML = certHtml(b);
+            $("issued").classList.remove("hide");
+          } catch (e) {
+            m.className = "msg bad";
+            m.textContent = "Something went wrong: " + e.message;
+          } finally {
+            btn.disabled = false;
+          }
+        };
+        function pdfFor(b) {
+          var J = window.jspdf && window.jspdf.jsPDF;
+          if (!J) return null;
+          var d = b.data,
+            doc = new J({ orientation: "landscape", unit: "pt", format: "a4" });
+          var W = doc.internal.pageSize.getWidth(),
+            H = doc.internal.pageSize.getHeight(),
+            cx = W / 2;
+          doc.setDrawColor(176, 141, 47);
+          doc.setLineWidth(4);
+          doc.rect(28, 28, W - 56, H - 56);
+          doc.setLineWidth(1);
+          doc.rect(38, 38, W - 76, H - 76);
+          doc.setTextColor(176, 141, 47);
+          doc.setFont("times", "normal");
+          doc.setFontSize(14);
+          doc.text("CERTIFICATE OF ACHIEVEMENT", cx, 100, {
+            align: "center",
+            charSpace: 3,
+          });
+          doc.setTextColor(40, 40, 40);
+          doc.setFontSize(14);
+          doc.text("This is to certify that", cx, 150, { align: "center" });
+          doc.setFont("times", "bold");
+          doc.setFontSize(34);
+          var nm = doc.splitTextToSize(d.name, W - 160);
+          doc.text(nm, cx, 205, { align: "center" });
+          var y = 205 + nm.length * 34;
+          doc.setFont("times", "normal");
+          doc.setFontSize(14);
+          doc.text("has successfully completed", cx, y + 10, {
+            align: "center",
+          });
+          doc.setFont("times", "bold");
+          doc.setFontSize(24);
+          var cr = doc.splitTextToSize(d.course, W - 160);
+          doc.text(cr, cx, y + 50, { align: "center" });
+          y = y + 50 + cr.length * 24;
+          doc.setFont("times", "normal");
+          doc.setFontSize(14);
+          doc.text("Issued by " + d.issuer + " on " + d.date, cx, y + 20, {
+            align: "center",
+            maxWidth: W - 160,
+          });
+          doc.setFont("courier", "normal");
+          doc.setFontSize(8);
+          doc.setTextColor(110, 110, 110);
+          doc.text("ID: " + d.certId + "  |  Block #" + b.index, cx, H - 80, {
+            align: "center",
+          });
+          doc.text("Hash: " + b.hash, cx, H - 66, { align: "center" });
+          return doc;
+        }
+        $("print").onclick = async function () {
+          var m = $("pdfMsg");
+          m.className = "msg";
+          if (!lastIssued) {
+            m.className = "msg bad";
+            m.textContent = "Issue a certificate first.";
+            return;
+          }
+          var dl = null;
+          try {
+            dl = window.claude && (await window.claude.use("downloads"));
+          } catch (e) {}
+          if (!dl) {
+            try {
+              window.print();
+            } catch (e) {}
+            return;
+          }
+          var b = lastIssued,
+            doc = pdfFor(b),
+            name = b.data.certId + ".pdf";
+          try {
+            if (!doc) throw { code: "nopdf" };
+            await dl.save({ filename: name, data: doc.output("arraybuffer") });
+            m.className = "msg ok";
+            m.textContent = "Saved " + name + ".";
+          } catch (e) {
+            if (e && e.code === "declined") {
+              m.textContent = "";
+              return;
+            }
+            try {
+              var html =
+                '<!DOCTYPE html><meta charset="utf-8"><title>' +
+                esc(b.data.certId) +
+                "</title><style>body{margin:0;padding:24px;font-family:Georgia,serif}.cert{border:6px double #b08d2f;padding:26px 16px;text-align:center}.cert .t{letter-spacing:.25em;font-size:12px;color:#b08d2f;text-transform:uppercase}.cert h2{font-size:26px}.cert .n{font-size:30px;border-bottom:1px solid #ccc;display:inline-block;padding:0 14px 4px}.cert .m{font:11px monospace;color:#666;word-break:break-all;margin-top:14px}</style>" +
+                certHtml(b);
+              await dl.save({ filename: b.data.certId + ".html", data: html });
+              m.className = "msg ok";
+              m.textContent =
+                "Saved " +
+                b.data.certId +
+                ".html (open it and use Print to get a PDF).";
+            } catch (e2) {
+              m.className = "msg bad";
+              m.textContent = "Could not save the file here.";
+            }
+          }
+        };
+
+        $("vgo").onclick = async function () {
+          var id = $("vid").value.trim().toUpperCase(),
+            m = $("vMsg"),
+            out = $("vCert");
+          out.innerHTML = "";
+          m.className = "msg";
+          if (!id) {
+            m.className = "msg bad";
+            m.textContent = "Enter a certificate ID.";
+            return;
+          }
+          var b = chain.find(function (x) {
+            return x.data && x.data.certId === id;
+          });
+          if (!b) {
+            m.className = "msg bad";
+            m.textContent =
+              "No certificate with that ID exists on this ledger.";
+            return;
+          }
+          var bad = await firstInvalid(b.index);
+          if (bad !== -1) {
+            m.className = "msg bad";
+            m.textContent =
+              "Record found but it fails verification (chain broken at block #" +
+              bad +
+              "). It may have been tampered with.";
+            return;
+          }
+          m.className = "msg ok";
+          m.textContent =
+            "Authentic: hash, proof-of-work and chain links all check out.";
+          out.innerHTML = certHtml(b);
+        };
+
+        $("undo").onclick = function () {
+          var c = load();
+          if (c) {
+            chain = c;
+            renderLedger();
+          }
+        };
+        $("reset").onclick = async function () {
+          if (!confirm("Delete all issued certificates and start a new chain?"))
+            return;
+          chain = [await genesis()];
+          save();
+          $("issued").classList.add("hide");
+          renderLedger();
+        };
+
+        (async function init() {
+          chain = load() || [await genesis()];
+          save();
+        })();
+      })();
+    </script>
+  </body>
+</html>
